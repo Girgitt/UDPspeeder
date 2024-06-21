@@ -258,7 +258,7 @@ int handle_command(char *s) {
     } else if (strncmp(s, "mtu", strlen("mtu")) == 0) {
         mylog(log_info, "got command [mtu]\n");
         sscanf(s, "mtu %d", &a);
-        if (a < 100 || a > 2000) {
+        if (a < 100 || a > 9000) {
             mylog(log_warn, "invaild value\n");
             return -1;
         }
@@ -782,8 +782,8 @@ void process_arg(int argc, char *argv[]) {
                     }
                 } else if (strcmp(long_options[option_index].name, "mtu") == 0) {
                     sscanf(optarg, "%d", &g_fec_par.mtu);
-                    if (g_fec_par.mtu < 100 || g_fec_par.mtu > 2000) {
-                        mylog(log_fatal, "fec_mtu should be between 100 and 2000\n");
+                    if (g_fec_par.mtu < 100 || g_fec_par.mtu > 9000) {
+                        mylog(log_fatal, "fec_mtu should be between 100 and 9000 and over 1350 only of JUMBO frames are enabled\n");
                         myexit(-1);
                     }
                 } else if (strcmp(long_options[option_index].name, "out-addr") == 0) {
