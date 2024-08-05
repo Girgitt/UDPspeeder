@@ -107,9 +107,9 @@ const int default_mtu = 1250;
 // const u32_t timer_interval=400;
 ////const u32_t conv_timeout=180000;
 // const u32_t conv_timeout=40000;//for test
-const u32_t conv_timeout = 180000;
+const u32_t conv_timeout = 1000;  // 180000
 const int max_conv_num = 10000;
-const int max_conn_num = 200;
+const int max_conn_num = 200000;
 
 /*
 const u32_t max_handshake_conn_num=10000;
@@ -122,19 +122,19 @@ const u32_t client_retry_interval=1000;
 
 const u32_t server_handshake_timeout=10000;// this should be much longer than clients. client retry initially ,server retry passtively*/
 
-const int conv_clear_ratio = 30;  // conv grabage collecter check 1/30 of all conv one time
-const int conn_clear_ratio = 50;
-const int conv_clear_min = 1;
-const int conn_clear_min = 1;
+const int conv_clear_ratio = 2;  // conv grabage collecter check 1/30 of all conv one time
+const int conn_clear_ratio = 2;
+const int conv_clear_min = 1000;
+const int conn_clear_min = 1000;
 
-const u32_t conv_clear_interval = 1000;
-const u32_t conn_clear_interval = 1000;
+const u32_t conv_clear_interval = 100;
+const u32_t conn_clear_interval = 100;
 
 const i32_t max_fail_time = 0;  // disable
 
 const u32_t heartbeat_interval = 1000;
 
-const u32_t timer_interval = 400;  // this should be smaller than heartbeat_interval and retry interval;
+const u32_t timer_interval = 50;  //400 this should be smaller than heartbeat_interval and retry interval;
 
 // const uint32_t conv_timeout=120000; //120 second
 // const u32_t conv_timeout=120000; //for test
