@@ -26,6 +26,10 @@ int output_interval_max = 0 * 1000;
 int fix_latency = 0;
 
 address_t local_addr, remote_addr;
+
+vector<address_t> remote_addrs;
+std::vector<std::unique_ptr<conn_info_t>> g_multi_conn;
+
 address_t *out_addr = 0;
 char *out_interface = 0;
 // u32_t local_ip_uint32,remote_ip_uint32=0;
@@ -55,6 +59,44 @@ int manual_set_tun = 0;
 int persist_tun = 0;
 
 char rs_par_str[rs_str_len] = "20:10";
+
+
+std::unique_ptr<conn_info_t> make_conn_info_for_address(const address_t &addr)
+{
+    int real_fd = 0;
+    // Cast away const, or fix new_connected_socket2(...) to take const:
+    address_t &nonConstRef = const_cast<address_t&>(addr);
+    int ret = new_connected_socket2(real_fd, nonConstRef, nullptr, out_interface);
+    if (ret != 0)
+    {
+        mylog(log_fatal,
+              "failed to create/connect socket for [%s]\n",
+              nonConstRef.get_str());
+        myexit(-1);
+    }
+
+    // allocate on heap
+    std::unique_ptr<conn_info_t> cinfo(new conn_info_t());
+    cinfo->remote_fd64 = fd_manager.create(real_fd);
+    cinfo->update_active_time();
+    return cinfo;  // returning a unique_ptr => no copy
+}
+
+
+void init_multiple_connections()
+{
+    g_multi_conn.clear();
+    g_multi_conn.reserve(remote_addrs.size());  // optional optimization
+
+    for (size_t i = 0; i < remote_addrs.size(); i++)
+    {
+        // Get a new conn_info_t as a unique_ptr
+        auto cinfo = make_conn_info_for_address(remote_addrs[i]);
+        // push_back by moving the unique_ptr => no copy constructor needed
+        g_multi_conn.push_back(std::move(cinfo));
+    }
+}
+
 
 int from_normal_to_fec(conn_info_t &conn_info, char *data, int len, int &out_n, char **&out_arr, int *&out_len, my_time_t *&out_delay) {
     static my_time_t out_delay_buf[max_fec_packet_num + 100] = {0};
@@ -705,9 +747,47 @@ void process_arg(int argc, char *argv[]) {
                 local_addr.from_str(optarg);
                 break;
             case 'r':
-                no_r = 0;
-                remote_addr.from_str(optarg);
-                break;
+                //no_r = 0;
+                //remote_addr.from_str(optarg);
+                //break;
+                {
+                    no_r = 0;
+                    if (strchr(optarg, ',') != NULL) {
+                        vector<string> remotes = string_to_vec(optarg, ",");
+                        for (auto &s : remotes) {
+                            address_t addr;
+                            if (addr.from_str((char *)s.c_str()) != 0) {
+                                fprintf(stderr, "Invalid remote address: %s\n", s.c_str());
+                                exit(1);
+                            }
+                            mylog(log_info, "adding remote address from multiple provided ones: %s\n", s.c_str());
+                            remote_addrs.push_back(addr);
+                        }
+                    } else {
+                        address_t addr;
+                        if (addr.from_str(optarg) != 0) {
+                            fprintf(stderr, "Invalid remote address: %s\n", optarg);
+                            exit(1);
+                        }
+                        mylog(log_info, "adding remote address from single one provided: %s\n", optarg);
+                        remote_addrs.push_back(addr);
+                    }
+                    // Set the legacy remote_addr to the first element so that code
+                    // still referencing it gets a valid address.
+                    if (!remote_addrs.empty()) {
+                        remote_addr = remote_addrs[0];
+                    }
+                    //connections.resize(remote_addrs.size());
+                    //FIXME: temporary fix for init_multiple_connections so the fd_manager does not abort on assertion on expected program mode
+                    if (is_client == 1) {
+                        program_mode = client_mode;
+                    } else {
+                        program_mode = server_mode;
+                    }
+                    init_multiple_connections();
+                    no_r = 0;  // (Assuming you fixed this flag as well)
+                    break;
+                }
             case 'h':
                 break;
             case 1:

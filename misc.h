@@ -13,6 +13,13 @@
 #include "fd_manager.h"
 #include "delay_manager.h"
 #include "fec_manager.h"
+#include <vector>
+#include <string>
+#include <memory>
+using std::vector;
+using std::string;
+
+
 
 extern char fifo_file[1000];
 
@@ -37,6 +44,9 @@ extern int fix_latency;
 // extern int local_port, remote_port;
 
 extern address_t local_addr, remote_addr;
+
+extern vector<address_t> remote_addrs;
+extern std::vector<std::unique_ptr<conn_info_t>> g_multi_conn;
 
 extern address_t *out_addr;
 extern char *out_interface;

@@ -87,7 +87,21 @@ void data_from_local_or_fec_timeout(conn_info_t &conn_info, int is_time_out) {
     }
     mylog(log_trace, "out_n=%d\n", out_n);
     for (int i = 0; i < out_n; i++) {
-        delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+        //delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+
+        for (auto &cinfoPtr : g_multi_conn)  // cinfoPtr is a unique_ptr<conn_info_t>
+        {
+            conn_info_t *p = cinfoPtr.get();
+            // or just use *cinfoPtr
+            dest_t dest;
+            dest.type = type_fd64;
+            dest.inner.fd64 = p->remote_fd64;
+            dest.cook = 1;
+
+            delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+
+        }
+
     }
 }
 static void local_listen_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
@@ -170,7 +184,19 @@ static void remote_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) 
         dest.inner.fd_addr.addr = addr;
         dest.type = type_fd_addr;
 
-        delay_send(out_delay[i], dest, new_data, new_len);
+        //delay_send(out_delay[i], dest, new_data, new_len);
+        for (auto &cinfoPtr : g_multi_conn)  // cinfoPtr is a unique_ptr<conn_info_t>
+        {
+            conn_info_t *p = cinfoPtr.get();
+
+            dest_t dest;
+            dest.type = type_fd64;
+            dest.inner.fd64 = p->remote_fd64;
+            dest.cook = 1;
+
+            delay_send(out_delay[i], dest, new_data, new_len);
+
+        }
     }
 }
 
@@ -230,7 +256,19 @@ static void conn_timer_cb(struct ev_loop *loop, struct ev_timer *watcher, int re
         dest.cook = 1;
         from_normal_to_fec(conn_info, 0, 0, out_n, out_arr, out_len, out_delay);
         for (int i = 0; i < out_n; i++) {
-            delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+            //delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+            for (auto &cinfoPtr : g_multi_conn)  // cinfoPtr is a unique_ptr<conn_info_t>
+            {
+                conn_info_t *p = cinfoPtr.get();
+
+                dest_t dest;
+                dest.type = type_fd64;
+                dest.inner.fd64 = p->remote_fd64;
+                dest.cook = 1;
+
+                delay_send(out_delay[i], dest, out_arr[i], out_len[i]);
+
+            }
         }
     }
 }
